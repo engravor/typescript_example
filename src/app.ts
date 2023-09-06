@@ -1,8 +1,10 @@
 import { log } from "console";
 import { google, calendar_v3 } from "googleapis";
+import express from 'express';
+import path from 'path';
 
 // Cargar el archivo JSON de credenciales generado en la consola de desarrolladores de Google.
-const credentials = require("./credentials.json");
+const credentials = require("../credentials.json");
 
 const calendarId = "cristian.maurin@gmail.com";
 
@@ -10,7 +12,15 @@ const calendarId = "cristian.maurin@gmail.com";
 const SCOPES = "https://www.googleapis.com/auth/calendar";
 const calendar = google.calendar({ version: "v3" });
 
-async function insertEvents() {
+interface MyEvents {
+  event_name: string;
+  event_time: string;
+}
+
+// Create an array of dictionaries
+let listOfDicts: MyEvents[] = [];
+
+async function insertEvents(from: string, event_name: string) {
   try {
     // Autenticar con las credenciales.
     const auth = new google.auth.JWT(
@@ -23,30 +33,28 @@ async function insertEvents() {
     const calendar = google.calendar({ version: "v3", auth });
 
     // Obtiene la fecha actual.
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
+    const event_from = new Date(from)
+    // Incrementar una hora en la fecha
+    const unaHoraEnMs = 60 * 60 * 1000;  
+    const event_to = new Date(event_from.getTime() + unaHoraEnMs);
     const event: calendar_v3.Schema$Event = {
-      summary: 'Título del evento',
-      description: 'Descripción del evento',
+      summary: event_name,
+      description: event_name,
       start: {
-        dateTime: '2023-09-01T10:00:00Z', // Fecha y hora de inicio en formato ISO 8601
-        timeZone: 'America/Los_Angeles', // Zona horaria
+        dateTime: event_from.toISOString(), // Fecha y hora de inicio en formato ISO 8601
+        timeZone: 'GMT-0300', // Zona horaria
       },
       end: {
-        dateTime: '2023-09-01T11:00:00Z', // Fecha y hora de finalización en formato ISO 8601
-        timeZone: 'America/Los_Angeles', // Zona horaria
+        dateTime: event_to.toISOString(), // Fecha y hora de finalización en formato ISO 8601
+        timeZone: 'GMT-0300', // Zona horaria
       },
     };
-
 
     // Crea el evento en el calendario
     const response = await calendar.events.insert({
       calendarId: calendarId,
       requestBody: event
     });
-
-    console.log("Se creao un evento.");
 
   } catch (error) {
     console.error("Error al obtener eventos:", error);
@@ -76,13 +84,11 @@ async function listTodaysEvents() {
       timeMin: new Date(2023, 8, 1).toISOString(),
       timeMax: new Date(2023, 9, 4).toISOString(), // Hasta el final del día.
     });
-
-    console.log("Eventos del día de hoy:");
+    listOfDicts = []
     if (events.data.items?.length) {
-      console.log("No se puede crear un evento! No hay lugar");
-      // events.data.items?.forEach((event) => {
-      //   console.log(`${event.summary}`);
-      // });
+      events.data.items?.forEach((event) => {
+        listOfDicts.push({ event_name: `${event.summary}`, event_time: `${event.start?.dateTime}` });
+      });
     } else {
       console.log("creo un evento!");
     }
@@ -91,6 +97,32 @@ async function listTodaysEvents() {
   }
 }
 
-// Ejecuta la función para listar los eventos.
-listTodaysEvents(); 
-insertEvents();
+import bodyParser from 'body-parser';
+
+const app = express();
+const port = 3000;
+
+
+app.use(express.static(path.join(__dirname, '../public')));
+app.use(bodyParser.json());
+
+app.get('/api/message', (req, res) => {
+    const message = 'Hello from the server!';
+    res.json({ message });
+});
+
+app.get('/api/get_events', (req, res) => {
+    listTodaysEvents()
+    res.json(listOfDicts);
+});
+
+app.post('/api/receive-date', (req, res) => {
+    const { event_date, event_name } = req.body;
+    insertEvents(event_date, event_name);
+    listTodaysEvents();
+    res.json(listOfDicts);
+});
+
+app.listen(port, () => {
+    console.log(`Server is running on http://localhost:${port}`);
+});

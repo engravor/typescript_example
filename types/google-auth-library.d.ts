@@ -1,4 +1,3 @@
-// types/google-auth-library.d.ts
 declare module 'google-auth-library' {
     import { AuthClient, GenerateAuthUrlOpts, OAuth2Client } from 'google-auth-library/build/src/auth/oauth2client';
     import { Credentials } from 'google-auth-library/build/src/auth/credentials';

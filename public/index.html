@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Display Data from Backend</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f0f0f0;
+                margin: 0;
+                padding: 0;
+            }
+    
+            h1 {
+                background-color: #007BFF;
+                color: #fff;
+                padding: 10px;
+                text-align: center;
+            }
+    
+            form {
+                text-align: center;
+                margin: 20px auto;
+                max-width: 300px;
+            }
+    
+            label {
+                font-weight: bold;
+            }
+    
+            input[type="datetime-local"] {
+                width: 100%;
+                padding: 10px;
+                margin-bottom: 10px;
+                border: 1px solid #ccc;
+            }
+    
+            button[type="submit"] {
+                background-color: #007BFF;
+                color: #fff;
+                border: none;
+                padding: 10px 20px;
+                cursor: pointer;
+            }
+    
+            ul {
+                list-style: none;
+                padding: 0;
+            }
+    
+            li {
+                background-color: #fff;
+                border: 1px solid #ccc;
+                margin: 5px 0;
+                padding: 10px;
+                box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+            }
+        </style>
+    </head>
+<body>
+    <h1>Crear Nuevo Evento:</h1>
+    <form id="dateForm">
+        <label for="dateInput">Enter a Date:</label>
+        <input type="datetime-local" id="dateInput" name="dateInput" required>
+        <label for="textInput">Give a name to the appoiment:</label>
+        <input type="input" id="textInput" name="textInput" required>
+        <button type="submit">Submit</button>
+    </form>
+    <div id="result"></div>
+    <h1>Eventos Existentes:</h1>
+    <div id="events"></div>
+    <ul id="dataList"></ul>
+    <script>
+        const dateForm = document.getElementById('dateForm');
+        const resultDiv = document.getElementById('result');
+        const dataList = document.getElementById('dataList');
+
+        // Fetch and set the random message as the title
+        fetch('/api/get_events')
+            .then(response => response.json())
+            .then(data => {
+                // Loop through the list of dictionaries and create list items
+                data.forEach(item => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `Evento: ${item.event_name}, Horario: ${item.event_time}`;
+                    dataList.appendChild(listItem);
+                });
+            });
+
+        dateForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const dateInput = document.getElementById('dateInput').value;
+            const textInput = document.getElementById('textInput').value;
+            const response = await fetch('/api/receive-date', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ event_date: dateInput, event_name: textInput}),
+            });
+
+            const data = await response.json();
+            resultDiv.textContent = `Evento '${textInput}' creado exitosamente para: ${dateInput}`;
+            dataList.innerHTML = '';
+            data.forEach(item => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `Evento: ${item.event_name}, Horario: ${item.event_time}`;
+                    dataList.appendChild(listItem);
+                });
+        });
+    </script>
+</body>
+</html>
