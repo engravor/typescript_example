@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CalendarModel = void 0;
 const googleapis_1 = require("googleapis");
-const credentials = require("../credentials.json");
+const credentials = require("../../credentials.json");
 const SCOPES = "https://www.googleapis.com/auth/calendar";
 class CalendarModel {
     constructor(calendarId) {

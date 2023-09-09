@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const calendar_1 = require("./controllers/calendar");
-const calendarController = new calendar_1.CalendarController("cristian.maurin@gmail.com");
+const controller_1 = require("./controller");
+const calendarController = new controller_1.CalendarController("cristian.maurin@gmail.com");
 class Agenda {
     obtenerListaDeEventos(date_from, date_to) {
         const listOfDicts = calendarController.getEvents(date_from, date_to);
